@@ -6,10 +6,11 @@
 #include <eosio/datastream.hpp>
 
 #include <wa_proxy/wa_proxy.hpp>
+#include <wa_proxy/tables.hpp>
+
 #include <wa_proxy/json_parser.hpp>
 
 using namespace eosio;
-
 namespace wa_proxy {
 
 void waproxy_contract::validate_user_state(eosio::name user) {

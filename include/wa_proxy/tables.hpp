@@ -5,9 +5,16 @@
 #include <eosio/binary_extension.hpp>
 #include <eosio/crypto.hpp>
 
-using namespace eosio;
 
 namespace wa_proxy {
+
+// Avoid using the whole namespace.
+using eosio::multi_index;
+using eosio::checksum256;
+using eosio::name;
+using eosio::sha256;
+using eosio::const_mem_fun;
+using eosio::indexed_by;
 
 struct [[eosio::table]] [[eosio::contract("waproxy_contract")]] pubkeys {
    
@@ -34,7 +41,6 @@ typedef multi_index< "pubkeys"_n, pubkeys,
     indexed_by<"by.user"_n, const_mem_fun<pubkeys, uint64_t, &pubkeys::by_user>>
 > pubkeys_table;
 
-
 struct [[eosio::table]] [[eosio::contract("waproxy_contract")]] users {
    
     name       user;
@@ -47,7 +53,6 @@ struct [[eosio::table]] [[eosio::contract("waproxy_contract")]] users {
 };
 
 typedef multi_index< "users"_n, users> users_table;
-
 
 struct [[eosio::table]] [[eosio::contract("waproxy_contract")]] android_origins {
    
@@ -67,7 +72,6 @@ typedef multi_index< "androidorgin"_n, android_origins,
     indexed_by<"by.android"_n, const_mem_fun<android_origins, checksum256, &android_origins::by_android_origin>>
 > android_origins_table;
 
-
 struct [[eosio::table]] [[eosio::contract("waproxy_contract")]] config {
     uint64_t id;
     std::string       rpid;
@@ -79,4 +83,4 @@ struct [[eosio::table]] [[eosio::contract("waproxy_contract")]] config {
 
 typedef multi_index< "config"_n, config> config_table;
 
-}
+} // namespace wa_proxy
