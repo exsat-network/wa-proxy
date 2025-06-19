@@ -75,7 +75,7 @@ typedef multi_index< "androidorgin"_n, android_origins,
 struct [[eosio::table]] [[eosio::contract("waproxy_contract")]] config {
     uint64_t id;
     std::string       rpid;
-    std::string       chain_id;
+    eosio::checksum256       chain_id;
 
     uint64_t primary_key()const { return id; }
     EOSLIB_SERIALIZE(config, (id)(rpid)(chain_id));

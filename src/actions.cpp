@@ -76,7 +76,7 @@ void waproxy_contract::validate_challenge(const eosio::action& relay_action, blo
     serialize.resize(pack_size(config_iter->chain_id) + pack_size(relay_action) + 
                         pack_size(nonce) + pack_size(expiration));
 
-    datastream<char*> ds( serialize.data(), serialize.size() );
+    datastream<char*> ds(serialize.data(), serialize.size());
     ds << config_iter->chain_id;
     ds << relay_action;
     ds << nonce;
@@ -124,7 +124,7 @@ waproxy_contract::waproxy_contract(eosio::name receiver, eosio::name code, const
 }
 
 // Actions
-void waproxy_contract::init(const std::string& chain_id, const std::string& rpid) {
+void waproxy_contract::init(const eosio::checksum256& chain_id, const std::string& rpid) {
     require_auth(get_self());
 
     config_table config_table_v(get_self(), get_self().value);

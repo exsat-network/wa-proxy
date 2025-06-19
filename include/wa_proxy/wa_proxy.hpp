@@ -69,7 +69,7 @@ public:
      * @param chain_id The chain_id of the network in string.
      * @param rpid The rpid in string.
      */
-    [[eosio::action]] void init(const std::string& chain_id, const std::string& rpid);
+    [[eosio::action]] void init(const eosio::checksum256& chain_id, const std::string& rpid);
 
     /**
      * @brief Register or unregister an android origin string.
