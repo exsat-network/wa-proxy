@@ -90,7 +90,7 @@ void waproxy_contract::validate_challenge(const eosio::action& relay_action, blo
 void waproxy_contract::validate_origin(const std::string& origin_string, const std::string& rpid, bool allow_android_origin) {
     // Check origin
     if (origin_string.starts_with("https://")) {
-        validate_origin_domain(rpid, origin_string);
+        validate_origin_domain(origin_string, rpid);
     }
     else if (origin_string.starts_with("android:")) {
         eosio::check(allow_android_origin, "Android access for this key is not enabled.");
@@ -102,13 +102,13 @@ void waproxy_contract::validate_origin(const std::string& origin_string, const s
     }
 }
 
-void waproxy_contract::validate_origin_domain(const std::string& url, const std::string& rpid) {
+void waproxy_contract::validate_origin_domain(const std::string& origin_string, const std::string& rpid) {
     // Follow the exact match rule for now.
     // Note that we use the rfind to search for the separator for the port.
     // nops will be return if not found.
     // But this will be fine as substr can tolerate a large len and just return the rest of the string.
     // strlen("https://") = 8;
-    eosio::check(rpid == url.substr(0, url.rfind(':') - 8), "origin failed to match rpid");
+    eosio::check(rpid == origin_string.substr(8, origin_string.rfind(':') - 8), "origin failed to match rpid");
 }
 
 void waproxy_contract::validate_origin_android(const std::string& origin_string) {

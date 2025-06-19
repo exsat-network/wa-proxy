@@ -101,7 +101,7 @@ private:
     void validate_challenge(const eosio::action& relay_action, eosio::block_timestamp expiration, uint64_t nonce, const std::string& challenge);
     
     void validate_origin(const std::string& origin_string, const std::string& rpid, bool allow_android_origin);
-    void validate_origin_domain(const std::string& url, const std::string& rpid);
+    void validate_origin_domain(const std::string& origin_string, const std::string& rpid);
     void validate_origin_android(const std::string& origin_string);
 };
 
