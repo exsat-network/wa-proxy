@@ -30,12 +30,12 @@ public:
      * @param relay_action The action to be relayed. It must only have the authorization of the user's active permission.
      * @param expiration The expiration time for the request. We need this to prevent replay attacks.
      * @param serialized_pubkey The serialized WA public key associated to the signature. pubkey must be registered under the user.
-     * @param sig The WA signature over (chain_id + relay_action + nonce + expiration).
+     * @param serialized_sig The serialized WA signature over (chain_id + relay_action + nonce + expiration).
      * where chain_id is the Vaulta network chain_id, nonce is the user level nonce. 
      * chain_id can be found in the config table and the nonce from the users table.
      */
     [[eosio::action]] void proxycall(eosio::name user, const eosio::action& relay_action, eosio::block_timestamp expiration,
-        const std::vector<char>& serialized_pubkey, const eosio::webauthn_signature& sig);
+        const std::vector<char>& serialized_pubkey, const std::vector<char>& serialized_sig);
 
     /**
      * @brief Register a public key for the user. 

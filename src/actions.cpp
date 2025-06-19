@@ -40,7 +40,8 @@ uint64_t waproxy_contract::get_and_increment_nonce(eosio::name user) {
 }
 
 void waproxy_contract::validate_public_key(const std::vector<char>& serialized_pubkey) {
-    const auto pubkey = unpack<eosio::webauthn_public_key>(serialized_pubkey);
+    // 2 is WA key
+    const auto pubkey = std::get<2>(unpack<eosio::public_key>(serialized_pubkey));
     const std::string& rpid = pubkey.rpid;
     config_table config_table_v(get_self(), get_self().value);
     auto config_iter = config_table_v.begin();
@@ -169,7 +170,8 @@ void waproxy_contract::unregkey(eosio::name user, const std::vector<char>& seria
     require_auth(user);
 
     validate_user_state(user);
-    validate_public_key(serialized_pubkey);
+    // Allow removal of illegal keys. TODO: Double check if this design is fine.
+    // validate_public_key(serialized_pubkey);
     const auto& entry = get_pubkey_info(user, serialized_pubkey);
 
     // existence checked above 
@@ -206,7 +208,7 @@ void waproxy_contract::regkey(eosio::name user, const std::vector<char>& seriali
 }
 
 void waproxy_contract::proxycall(eosio::name user, const eosio::action& relay_action, block_timestamp expiration,
-    const std::vector<char>& serialized_pubkey, const eosio::webauthn_signature& sig) {
+    const std::vector<char>& serialized_pubkey, const std::vector<char>& serialized_sig) {
 
     // Sanity Checks for Requested Action
     // We check them first as such mistakes could be common and the checks are cheaper.
@@ -231,7 +233,9 @@ void waproxy_contract::proxycall(eosio::name user, const eosio::action& relay_ac
     // Load some info for future use.
     bool allow_android_origin = pubkey_entry.allow_android_origin;
     // Use the rpid in public key is it is already validated.
-    const auto pubkey = unpack<eosio::webauthn_public_key>(serialized_pubkey);
+    // 2 is WA key
+    const auto pubkey = std::get<2>(unpack<eosio::public_key>(serialized_pubkey));
+    const auto sig = std::get<2>(unpack<eosio::signature>(serialized_sig));
     const std::string& rpid = pubkey.rpid;
     const std::vector<uint8_t>& auth_data = sig.auth_data;
     const std::string& client_data_json = sig.client_json;
