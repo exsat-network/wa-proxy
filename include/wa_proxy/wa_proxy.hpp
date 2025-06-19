@@ -27,7 +27,8 @@ public:
      * @auth None. This action relies on the signature to determine the authorization.
      * 
      * @param user The user to perform the relay_action. pubkey must be registered under the user.
-     * @param relay_action The action to be relayed. It must only have the authorization of the user's active permission.
+     * @param relay_actions The actions to be relayed. They must only have the authorization of the user's active permission.
+     * Zero length action array can be used to cancel requests that are not finalized by consuming the nonce.
      * @param expiration The expiration time for the request. We need this to prevent replay attacks.
      * @param serialized_pubkey The serialized WA public key associated to the signature. pubkey must be registered under the user.
      * @param serialized_sig The serialized WA signature over (chain_id + relay_action + nonce + expiration).
