@@ -34,7 +34,7 @@ public:
      * where chain_id is the Vaulta network chain_id, nonce is the user level nonce. 
      * chain_id can be found in the config table and the nonce from the users table.
      */
-    [[eosio::action]] void proxycall(eosio::name user, const eosio::action& relay_action, eosio::block_timestamp expiration,
+    [[eosio::action]] void proxycall(eosio::name user, const std::vector<eosio::action>& relay_actions, eosio::block_timestamp expiration,
         const std::vector<char>& serialized_pubkey, const std::vector<char>& serialized_sig);
 
     /**
@@ -98,7 +98,7 @@ private:
     void validate_public_key(const std::vector<char>& serialized_pubkey);
     const pubkeys& get_pubkey_info(eosio::name user, const std::vector<char>& serialized_pubkey);
     
-    void validate_challenge(const eosio::action& relay_action, eosio::block_timestamp expiration, uint64_t nonce, const std::string& challenge);
+    void validate_challenge(const std::vector<eosio::action>& relay_actions, eosio::block_timestamp expiration, uint64_t nonce, const std::string& challenge);
     
     void validate_origin(const std::string& origin_string, const std::string& rpid, bool allow_android_origin);
     void validate_origin_domain(const std::string& origin_string, const std::string& rpid);

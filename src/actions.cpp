@@ -66,19 +66,19 @@ const pubkeys& waproxy_contract::get_pubkey_info(eosio::name user, const std::ve
     return *pubkey_iter;
 }
 
-void waproxy_contract::validate_challenge(const eosio::action& relay_action, block_timestamp expiration, uint64_t nonce, const std::string& challenge) {
+void waproxy_contract::validate_challenge(const std::vector<eosio::action>& relay_actions, block_timestamp expiration, uint64_t nonce, const std::string& challenge) {
     // challenge = hash(chain_id + action + nonce + expire)
     // challenge string should be base64Url encoded.
     config_table config_table_v(get_self(), get_self().value);
     auto config_iter = config_table_v.begin();
 
     std::vector<char> serialize;
-    serialize.resize(pack_size(config_iter->chain_id) + pack_size(relay_action) + 
+    serialize.resize(pack_size(config_iter->chain_id) + pack_size(relay_actions) + 
                         pack_size(nonce) + pack_size(expiration));
 
     datastream<char*> ds(serialize.data(), serialize.size());
     ds << config_iter->chain_id;
-    ds << relay_action;
+    ds << relay_actions;
     ds << nonce;
     ds << expiration;
 
@@ -207,7 +207,7 @@ void waproxy_contract::regkey(eosio::name user, const std::vector<char>& seriali
     } 
 }
 
-void waproxy_contract::proxycall(eosio::name user, const eosio::action& relay_action, block_timestamp expiration,
+void waproxy_contract::proxycall(eosio::name user, const std::vector<eosio::action>& relay_actions, block_timestamp expiration,
     const std::vector<char>& serialized_pubkey, const std::vector<char>& serialized_sig) {
 
     // Sanity Checks for Requested Action
@@ -217,10 +217,12 @@ void waproxy_contract::proxycall(eosio::name user, const eosio::action& relay_ac
     const block_timestamp current_time = current_block_time();
     eosio::check(expiration >= current_time, "request expired");
 
+    for (const auto& a : relay_actions) {
     // Checks to action permission levels
-    eosio::check( relay_action.authorization.size() == 1 && 
-        relay_action.authorization[0] == permission_level(user, "active"_n), 
+    eosio::check( a.authorization.size() == 1 && 
+        a.authorization[0] == permission_level(user, "active"_n), 
         "Relay actions can only have the user's active authorization.");
+    }
 
     // Validate user states and key ownership
 
@@ -269,7 +271,7 @@ void waproxy_contract::proxycall(eosio::name user, const eosio::action& relay_ac
 
     // Validate challenge
     const uint64_t nonce = get_and_increment_nonce(user);
-    validate_challenge(relay_action, expiration, nonce, parsed_client_data.challenge);
+    validate_challenge(relay_actions, expiration, nonce, parsed_client_data.challenge);
 
     // Validate ECC Signature
     // signed_data = auth_data + hash(client_json)
@@ -290,8 +292,10 @@ void waproxy_contract::proxycall(eosio::name user, const eosio::action& relay_ac
     // All checks passed!
 
     // Relay Action
-    relay_action.send();
-
+    for (const auto& a : relay_actions) {
+        a.send();
+    }
+    
     // Nonce already changed.
 }
 
