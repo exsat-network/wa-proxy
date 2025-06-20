@@ -220,8 +220,8 @@ void waproxy_contract::proxycall(eosio::name user, const std::vector<eosio::acti
     for (const auto& a : relay_actions) {
     // Checks to action permission levels
     eosio::check( a.authorization.size() == 1 && 
-        a.authorization[0] == permission_level(user, "active"_n), 
-        "Relay actions can only have the user's active authorization.");
+        a.authorization[0].actor == user, 
+        "Relay actions can only have the user's authorization.");
     }
 
     // Validate user states and key ownership
