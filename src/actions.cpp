@@ -218,10 +218,10 @@ void waproxy_contract::proxycall(eosio::name user, const std::vector<eosio::acti
     eosio::check(expiration >= current_time, "request expired");
 
     for (const auto& a : relay_actions) {
-    // Checks to action permission levels
-    eosio::check( a.authorization.size() == 1 && 
-        a.authorization[0].actor == user, 
-        "Relay actions can only have the user's authorization.");
+        // Checks to action permission levels
+        eosio::check( a.authorization.size() == 1 && 
+            a.authorization[0].actor == user, 
+            "Relay actions can only have the user's authorization.");
     }
 
     // Validate user states and key ownership
