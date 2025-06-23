@@ -171,12 +171,15 @@ void waproxy_contract::unregkey(eosio::name user, const std::vector<char>& seria
 
     validate_user_state(user);
     // Allow removal of illegal keys. TODO: Double check if this design is fine.
-    // validate_public_key(serialized_pubkey);
-    const auto& entry = get_pubkey_info(user, serialized_pubkey);
-
-    // existence checked above 
+    // Do not use get_pubkey_info as it will not work.
     pubkeys_table pubkey_table_v(get_self(), get_self().value);
-    pubkey_table_v.erase(entry);
+    auto pubkey_inx = pubkey_table_v.get_index<"by.pubkey"_n>();
+    auto pubkey_iter = pubkey_inx.find(sha256(serialized_pubkey.data(), serialized_pubkey.size()));
+
+    eosio::check(pubkey_iter != pubkey_inx.end() && pubkey_iter->user == user, 
+        "Public key not registered for the requested user");
+    
+    pubkey_table_v.erase(*pubkey_iter);
 }
 
 void waproxy_contract::regkey(eosio::name user, const std::vector<char>& serialized_pubkey, bool allow_android_origin) {
