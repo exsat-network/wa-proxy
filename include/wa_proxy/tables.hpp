@@ -72,15 +72,14 @@ typedef multi_index< "androidorgin"_n, android_origins,
     indexed_by<"by.android"_n, const_mem_fun<android_origins, checksum256, &android_origins::by_android_origin>>
 > android_origins_table;
 
-struct [[eosio::table]] [[eosio::contract("waproxy_contract")]] config {
-    uint64_t id;
+struct [[eosio::table]] [[eosio::contract("waproxy_contract")]] config_t {
     std::string       rpid;
     eosio::checksum256       chain_id;
-
-    uint64_t primary_key()const { return id; }
-    EOSLIB_SERIALIZE(config, (id)(rpid)(chain_id));
+    eosio::name         evm_account;
+    
+    EOSLIB_SERIALIZE(config_t, (rpid)(chain_id)(evm_account));
 };
 
-typedef multi_index< "config"_n, config> config_table;
+typedef eosio::singleton<"config"_n, config_t> config_singleton_t;
 
 } // namespace wa_proxy

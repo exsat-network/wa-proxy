@@ -1,5 +1,6 @@
 
 #include <eosio/system.hpp>
+#include <eosio/name.hpp>
 #include <eosio/transaction.hpp>
 #include <eosio/base64.hpp>
 #include <eosio/crypto.hpp>
@@ -12,6 +13,30 @@
 
 using namespace eosio;
 namespace wa_proxy {
+
+struct callotherpay_args {
+    eosio::name payer; 
+    eosio::name from;
+    std::vector<char> to;
+    std::vector<char> value;
+    std::vector<char> data;
+    uint64_t gas_limit;
+    EOSLIB_SERIALIZE( callotherpay_args, (payer)(from)(to)(value)(data)(gas_limit) )
+};
+
+constexpr eosio::name callotherpay_method = "callotherpay"_n;
+
+config_t waproxy_contract::get_config() const {
+    config_singleton_t config(get_self(), get_self().value);
+    eosio::check(config.exists(), "config not exist");
+    return config.get();
+}
+
+
+void waproxy_contract::set_config(const config_t &v) {
+    config_singleton_t config(get_self(), get_self().value);
+    config.set(v, get_self());
+}
 
 void waproxy_contract::validate_user_state(eosio::name user) {
     users_table users_table_v(get_self(), get_self().value);
@@ -43,15 +68,15 @@ void waproxy_contract::validate_public_key(const std::vector<char>& serialized_p
     // 2 is WA key
     const auto pubkey = std::get<2>(unpack<eosio::public_key>(serialized_pubkey));
     const std::string& rpid = pubkey.rpid;
-    config_table config_table_v(get_self(), get_self().value);
-    auto config_iter = config_table_v.begin();
-    eosio::check(config_iter != config_table_v.end(), "contract not initialized");
+
+    const auto config = get_config();
+
     if (rpid == "localhost") {
         // Temporary setting for debug
         // TODO: remove it before launch
         return;
     }
-    eosio::check(config_iter->rpid == rpid, "requested rpid does not match saved rpid");
+    eosio::check(config.rpid == rpid, "requested rpid does not match saved rpid");
 }
 
 const pubkeys& waproxy_contract::get_pubkey_info(eosio::name user, const std::vector<char>& serialized_pubkey) {
@@ -69,15 +94,14 @@ const pubkeys& waproxy_contract::get_pubkey_info(eosio::name user, const std::ve
 void waproxy_contract::validate_challenge(const std::vector<eosio::action>& relay_actions, block_timestamp expiration, uint64_t nonce, const std::string& challenge) {
     // challenge = hash(chain_id + action + nonce + expire)
     // challenge string should be base64Url encoded.
-    config_table config_table_v(get_self(), get_self().value);
-    auto config_iter = config_table_v.begin();
+    const auto config = get_config();
 
     std::vector<char> serialize;
-    serialize.resize(pack_size(config_iter->chain_id) + pack_size(relay_actions) + 
+    serialize.resize(pack_size(config.chain_id) + pack_size(relay_actions) + 
                         pack_size(nonce) + pack_size(expiration));
 
     datastream<char*> ds(serialize.data(), serialize.size());
-    ds << config_iter->chain_id;
+    ds << config.chain_id;
     ds << relay_actions;
     ds << nonce;
     ds << expiration;
@@ -124,18 +148,19 @@ waproxy_contract::waproxy_contract(eosio::name receiver, eosio::name code, const
 }
 
 // Actions
-void waproxy_contract::init(const eosio::checksum256& chain_id, const std::string& rpid) {
+void waproxy_contract::init(const eosio::checksum256& chain_id, const std::string& rpid, eosio::name evm_account) {
     require_auth(get_self());
 
-    config_table config_table_v(get_self(), get_self().value);
-    auto config_iter = config_table_v.begin();
-    eosio::check(config_iter == config_table_v.end(), "contract already initialized");
+    config_singleton_t config_table(get_self(), get_self().value);
 
-    config_table_v.emplace(get_self(), [&](config& a) {
-        a.id = 0;
-        a.chain_id = chain_id;
-        a.rpid = rpid;
-    });
+    eosio::check(!config_table.exists(), "config already initialized");
+
+    config_t config {
+        .chain_id = chain_id,
+        .rpid = rpid,
+        .evm_account = evm_account,
+    };
+    set_config(config);
 }
 
 void waproxy_contract::regandroid(const std::string& andorid_origin_string, bool remove) {
@@ -212,7 +237,7 @@ void waproxy_contract::regkey(eosio::name user, const std::vector<char>& seriali
 
 void waproxy_contract::proxycall(eosio::name user, const std::vector<eosio::action>& relay_actions, block_timestamp expiration,
     const std::vector<char>& serialized_pubkey, const std::vector<char>& serialized_sig) {
-
+    const auto config = get_config();
     // Sanity Checks for Requested Action
     // We check them first as such mistakes could be common and the checks are cheaper.
     
@@ -221,10 +246,19 @@ void waproxy_contract::proxycall(eosio::name user, const std::vector<eosio::acti
     eosio::check(expiration >= current_time, "request expired");
 
     for (const auto& a : relay_actions) {
-        // Checks to action permission levels
-        eosio::check( a.authorization.size() == 1 && 
+        // Maximum 2 authorization is allowed and the first actor must be the user.
+        eosio::check(a.authorization.size() >= 1 && a.authorization.size() <= 2  && 
             a.authorization[0].actor == user, 
             "Relay actions can only have the user's authorization.");
+
+        // We should support multiple authorizations only when calling evm->callotherpay
+        if (a.authorization.size() == 2 ) {
+
+            callotherpay_args args = eosio::unpack<callotherpay_args>(a.data.data(), a.data.size());
+
+            eosio::check(a.account == config.evm_account && a.name == callotherpay_method && args.payer == a.authorization[1].actor, 
+                "Relay actions can only have the user's authorization.");
+        }
     }
 
     // Validate user states and key ownership

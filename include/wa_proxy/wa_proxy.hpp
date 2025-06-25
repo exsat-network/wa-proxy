@@ -11,7 +11,7 @@
 namespace wa_proxy {
 
 struct pubkeys; // forward declaration for table entry.
-
+struct config_t;
 class [[eosio::contract]] waproxy_contract : public eosio::contract
 {
 public:
@@ -69,8 +69,9 @@ public:
      * 
      * @param chain_id The chain_id of the network in string.
      * @param rpid The rpid in string.
+     * @param evm_account The evm account for supporting callotherpay method.
      */
-    [[eosio::action]] void init(const eosio::checksum256& chain_id, const std::string& rpid);
+    [[eosio::action]] void init(const eosio::checksum256& chain_id, const std::string& rpid, eosio::name evm_account);
 
     /**
      * @brief Register or unregister an android origin string.
@@ -104,6 +105,9 @@ private:
     void validate_origin(const std::string& origin_string, const std::string& rpid, bool allow_android_origin);
     void validate_origin_domain(const std::string& origin_string, const std::string& rpid);
     void validate_origin_android(const std::string& origin_string);
+
+    config_t get_config() const;
+    void set_config(const config_t &v);
 };
 
 } // namespace wa_proxy
