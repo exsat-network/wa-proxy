@@ -71,11 +71,11 @@ void waproxy_contract::validate_public_key(const std::vector<char>& serialized_p
 
     const auto config = get_config();
 
+    #ifdef DEBUG
     if (rpid == "localhost") {
-        // Temporary setting for debug
-        // TODO: remove it before launch
         return;
     }
+    #endif
     eosio::check(config.rpid == rpid, "requested rpid does not match saved rpid");
 }
 
